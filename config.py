@@ -9,8 +9,12 @@ Copy the example below to that path and fill in your values:
     "port": 7300,
     "callsign": "YOURCALL",
     "password": "yourpassword",
-    "timeout": 30
+    "timeout": 30,
+    "mode": "FT8"
 }
+
+Available modes (comma-separate multiple values, e.g. "FT8,FT4"):
+  CW, SSB, AM, FM, RTTY, PSK31, PSK63, FT8, FT4, JT65, JT9, WSPR, MSK144, Q65, JS8, FST4, FST4W, OLIVIA, MFSK
 """
 
 import json
@@ -23,6 +27,8 @@ DEFAULT_CONFIG = {
     "callsign": None,
     "password": None,
     "timeout": 30,
+    # Available modes: CW, SSB, AM, FM, RTTY, PSK31, PSK63, FT8, FT4, JT65, JT9, WSPR, MSK144, Q65, JS8, FST4, FST4W, OLIVIA, MFSK
+    "mode": "FT8",
 }
 
 USER_CONFIG_PATH = os.path.expanduser("~/.hamalert/config.json")

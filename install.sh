@@ -21,11 +21,13 @@ echo "Installing package..."
 pip install -q setuptools
 pip install -e . -q
 
-# Collect user credentials
+# Collect user credentials and preferences
 echo ""
 read -rp "Enter your HamAlert callsign: " CALLSIGN
 read -rsp "Enter your HamAlert password: " PASSWORD
 echo ""
+read -rp "Enter mode(s) to display, comma-separated [FT8]: " MODES
+MODES=${MODES:-FT8}
 
 # Write user config file
 CONFIG_DIR="${HOME}/.hamalert"
@@ -37,7 +39,8 @@ cat > "${CONFIG_FILE}" <<EOF
     "port": 7300,
     "callsign": "${CALLSIGN}",
     "password": "${PASSWORD}",
-    "timeout": 30
+    "timeout": 30,
+    "mode": "${MODES}"
 }
 EOF
 chmod 600 "${CONFIG_FILE}"

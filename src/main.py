@@ -7,7 +7,6 @@ logs in with callsign and password, then streams incoming spot data.
 import socket
 import sys
 import os
-from collections import deque
 from datetime import datetime
 
 # Allow running directly from the src/ directory
@@ -18,6 +17,8 @@ from config import load_config
 class HamAlertClient:
     """Telnet client for hamalert.org:7300 (DX-cluster protocol)."""
 
+    SPOT_MAX_AGE = 15 * 60  # seconds
+
     def __init__(self):
         cfg = load_config()
         self.host = cfg["host"]
@@ -25,6 +26,7 @@ class HamAlertClient:
         self.callsign = cfg["callsign"].upper()
         self.password = cfg["password"]
         self.timeout = cfg["timeout"]
+        self.modes = [m.strip().upper() for m in cfg.get("mode", "FT8").split(",") if m.strip()]
         self._sock = None
 
     # ------------------------------------------------------------------
@@ -87,8 +89,19 @@ class HamAlertClient:
     DISPLAY_ROWS = 10
     WIDTH = 78
 
-    def _render(self, spots: deque, last_updated: str, first_draw: bool) -> None:
+    def _matches_mode(self, text: str) -> bool:
+        """Return True if the spot text contains one of the configured modes."""
+        upper = text.upper()
+        return any(mode in upper for mode in self.modes)
+
+    def _render(self, spots: list, last_updated: str, first_draw: bool) -> None:
         """Redraw the rolling 10-spot display in place."""
+        now = datetime.now()
+        recent = [
+            txt for ts, txt in spots
+            if (now - ts).total_seconds() < self.SPOT_MAX_AGE
+        ][:self.DISPLAY_ROWS]
+
         header  = f" WT1W @ {self.host}:{self.port}   last updated: {last_updated}"
         sep     = "\u2500" * self.WIDTH
         footer  = " Ctrl-C to quit"
@@ -101,12 +114,12 @@ class HamAlertClient:
 
         print(f"\033[2K{header[:self.WIDTH]}")
         print(f"\033[2K{sep}")
-        for i, spot in enumerate(spots):
+        for i, spot in enumerate(recent):
             label = f"{i + 1:>2}  "
             line  = (label + spot)[: self.WIDTH]
             print(f"\033[2K{line}")
-        # Blank out any unfilled rows when fewer than 10 spots have arrived
-        for _ in range(self.DISPLAY_ROWS - len(spots)):
+        # Blank out any unfilled rows
+        for _ in range(self.DISPLAY_ROWS - len(recent)):
             print(f"\033[2K")
         print(f"\033[2K{sep}")
         print(f"\033[2K{footer}", end="\r\n", flush=True)
@@ -114,7 +127,7 @@ class HamAlertClient:
     def stream(self) -> None:
         """Maintain a rolling display of the 10 most recent spots."""
         self._sock.settimeout(None)  # block indefinitely
-        spots: deque = deque(maxlen=self.DISPLAY_ROWS)
+        spots: list = []  # list of (datetime, text), newest first
         buf = b""
         first_draw = True
         try:
@@ -127,9 +140,15 @@ class HamAlertClient:
                 while b"\n" in buf:
                     line, buf = buf.split(b"\n", 1)
                     text = line.decode(errors="replace").rstrip()
-                    if text:
-                        spots.appendleft(text)
-                        self._render(spots, datetime.now().strftime("%H:%M:%S"), first_draw)
+                    if text and self._matches_mode(text):
+                        now = datetime.now()
+                        spots.insert(0, (now, text))
+                        # Prune spots older than 15 minutes to avoid unbounded growth
+                        spots = [
+                            (ts, txt) for ts, txt in spots
+                            if (now - ts).total_seconds() < self.SPOT_MAX_AGE
+                        ]
+                        self._render(spots, now.strftime("%H:%M:%S"), first_draw)
                         first_draw = False
         except KeyboardInterrupt:
             print("\nDisconnected by user.")

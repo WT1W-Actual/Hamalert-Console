@@ -14,8 +14,8 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name="hamalert-client",
     version="0.1.0",
-    author="HamAlert User",
-    author_email="user@example.com",
+    author="Jim Perry WT1W/FEPLabs Radio",
+    author_email="jp@feplabs.com",
     description="A Python client for hamalert.org telnet DX cluster feed",
     long_description=long_description,
     long_description_content_type="text/markdown",
