@@ -4,9 +4,9 @@ HamAlert Client - Connects to hamalert.org via telnet (port 7300),
 logs in with callsign and password, then streams incoming spot data.
 """
 
+import os
 import socket
 import sys
-import os
 from datetime import datetime
 
 # Allow running directly from the src/ directory

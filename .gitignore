@@ -1,7 +1,20 @@
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-.hamalert/
+# Virtual environment
 hamalert_env/
+
+# Byte-compiled / optimised
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# User config — contains credentials, never commit
+.hamalert/
+config.json
+
+# macOS
 .DS_Store
