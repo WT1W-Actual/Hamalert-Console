@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.hamalert/
+hamalert_env/
+.DS_Store
